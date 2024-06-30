@@ -32,6 +32,11 @@ def add_date():
     period_start_dates.append(date_str)
     return redirect(url_for('index'))
 
+@app.route('/clear_dates', methods=['POST'])
+def clear_dates():
+    period_start_dates.clear()
+    return redirect(url_for('index'))
+
 @app.route('/get_periods', methods=['POST'])
 def get_periods():
     date_str = request.json['start_date']
