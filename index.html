@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Silvia's Period Calendar</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+  </head>
+  <body>
+    <h1>Silvia's Period Calendar</h1>
+    <form id="add-date-form">
+      <label for="date">Enter the start date of your last period:</label>
+      <input type="date" id="date" name="date" required />
+      <button type="submit">Add Date</button>
+    </form>
+    <button id="clear-dates">Clear All Dates</button>
+    <div id="calendar"></div>
+
+    <script>
+      // Store period start dates in local storage
+      let periodStartDates =
+        JSON.parse(localStorage.getItem("periodStartDates")) || [];
+
+      function saveDates() {
+        localStorage.setItem(
+          "periodStartDates",
+          JSON.stringify(periodStartDates)
+        );
+      }
+
+      function calculatePeriods(
+        startDate,
+        cycleLength = 27,
+        discrepancy = 1,
+        numPeriods = 12
+      ) {
+        const periods = [];
+        let currentDate = new Date(startDate);
+
+        for (let i = 0; i < numPeriods; i++) {
+          const nextPeriod = new Date(
+            currentDate.getTime() + cycleLength * 24 * 60 * 60 * 1000
+          );
+          const startWindow = new Date(
+            nextPeriod.getTime() - discrepancy * 24 * 60 * 60 * 1000
+          );
+          const endWindow = new Date(
+            nextPeriod.getTime() + discrepancy * 24 * 60 * 60 * 1000
+          );
+          periods.push({ start: startWindow, end: endWindow });
+          currentDate = nextPeriod;
+        }
+
+        return periods;
+      }
+
+      function renderCalendar(events) {
+        $("#calendar").fullCalendar("destroy"); // Destroy the existing calendar
+        $("#calendar").fullCalendar({
+          events: events,
+        });
+      }
+
+      function updateCalendar() {
+        const events = [];
+        periodStartDates.forEach((dateStr) => {
+          const periods = calculatePeriods(dateStr);
+          periods.forEach((period) => {
+            events.push({
+              title: "Expected Period",
+              start: period.start.toISOString().split("T")[0],
+              end: period.end.toISOString().split("T")[0],
+              color: "red",
+            });
+          });
+        });
+        renderCalendar(events);
+      }
+
+      $(document).ready(function () {
+        updateCalendar();
+
+        $("#add-date-form").on("submit", function (e) {
+          e.preventDefault();
+          const dateStr = $("#date").val();
+          periodStartDates.push(dateStr);
+          saveDates();
+          updateCalendar();
+        });
+
+        $("#clear-dates").on("click", function () {
+          periodStartDates = [];
+          saveDates();
+          updateCalendar();
+        });
+      });
+    </script>
+  </body>
+</html>
